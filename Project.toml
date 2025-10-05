@@ -1,0 +1,22 @@
+name = "SymJit"
+uuid = "04588a2d-d8a6-4b7e-8fea-48e77ed265f7"
+authors = ["Shahriar Iravanian <siravan@svtsim.com>"]
+version = "0.1.0"
+
+[deps]
+IfElse = "615f187c-cbe4-4ef1-ba3b-2fcf58d6d173"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+Mmap = "a63ad114-7e13-5084-954f-fe012c677804"
+ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
+Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+SymbolicUtils = "d1185830-fcd6-423d-90d6-eec64667417b"
+Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
+
+[compat]
+IfElse = "0.1.1"
+JSON = "1.0.1"
+Mmap = "1.11.0"
+ModelingToolkit = "10.24.0"
+Pkg = "1.11.0"
+SymbolicUtils = "3.32.0"
+Symbolics = "6.55.0"
