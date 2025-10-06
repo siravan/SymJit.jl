@@ -2,6 +2,7 @@ using Test
 
 using Symbolics
 using SymJit
+using DifferentialEquations
 
 @variables x y t
 
