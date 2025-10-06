@@ -59,13 +59,18 @@ function dumps(ref)
     return bin
 end
 
-function compile_ode(sys::ODESystem, params=[]; ty="native")
+function compile_ode(sys::ODESystem; ty="native")
     model = JSON.json(dictify(sys))
     return compile_model(OdeFunc, model; ty)
 end
 
-function compile_func(states, model, params=[]; ty="native")
-    model = JSON.json(dictify(states, model, params))
+function compile_ode(t, states, eqs; params=[], ty="native")
+    model = JSON.json(dictify(t, states, eqs; params))
+    return compile_model(OdeFunc, model; ty)
+end
+
+function compile_func(states, model; params=[], ty="native")
+    model = JSON.json(dictify(states, model; params))
     return compile_model(Lambdify, model; ty)
 end
 

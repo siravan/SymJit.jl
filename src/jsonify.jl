@@ -103,22 +103,6 @@ function equation(lhs, rhs, stringify)
     )
 end
 
-# function dictify(ml::CellModel; trim = false)
-#     stringify = trim ? trim_full : trim_partial
-
-#     d = Dict()
-
-#     sys = ml.sys
-#     d["iv"] = var_dict(sys.iv, 0.0, stringify)
-#     d["params"] = unique([var_dict(first(v), last(v), stringify) for v in list_params(ml)])
-#     d["states"] = [var_dict(first(v), last(v), stringify) for v in list_states(ml)]
-#     d["algs"] = [equation(eq, stringify) for eq in get_alg_eqs(sys)]
-#     d["odes"] = [equation(eq, stringify) for eq in get_diff_eqs(sys)]
-#     d["obs"] = [equation(eq, stringify) for eq in observed(sys)]
-
-#     return d
-# end
-
 function dictify(sys::ODESystem; trim = false)
     stringify = trim ? trim_full : trim_partial
 
@@ -134,7 +118,7 @@ function dictify(sys::ODESystem; trim = false)
     return d
 end
 
-function dictify(states::Vector{Num}, eqs::Vector{Num}, params=[]; trim = false)
+function dictify(states::Vector{Num}, eqs::Vector{Num}; params=[], trim = false)
     stringify = trim ? trim_full : trim_partial
     obs = []
     for i = 0:length(eqs)-1
@@ -154,9 +138,20 @@ function dictify(states::Vector{Num}, eqs::Vector{Num}, params=[]; trim = false)
     return d
 end
 
-# function save_ml(filename, ml::CellModel; trim = false)
-#     d = dictify(ml; trim)
-#     io = open(filename, "w")
-#     JSON.print(io, d, 4)
-#     close(io)
-# end
+function dictify(t, states::Vector{Num}, eqs::Vector{Num}; params=[], trim = false)
+    stringify = trim ? trim_full : trim_partial
+    obs = []
+    @assert length(states) == length(eqs)
+
+    d = Dict()
+    D = Differential(t)
+
+    d["iv"] = var_dict(t, 0.0, stringify)
+    d["params"] = [var_dict(v, 0.0, stringify) for v in params]
+    d["states"] = [var_dict(v, 0.0, stringify) for v in states]
+    d["algs"] = []
+    d["odes"] = [equation(D(lhs), rhs, stringify) for (lhs, rhs) in zip(states, eqs)]
+    d["obs"] = []
+
+    return d
+end
