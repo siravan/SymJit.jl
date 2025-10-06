@@ -14,7 +14,7 @@ Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 
 [compat]
 IfElse = "0.1.1"
-JSON = ">0.1, 1"
+JSON = "*"
 Mmap = "1.11.0"
 ModelingToolkit = "10.24.0"
 Pkg = "1.11.0"
