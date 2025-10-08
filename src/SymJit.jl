@@ -1,5 +1,10 @@
 module SymJit
 
+using Pkg.Artifacts
+
+ensure_artifact_installed("symjit", joinpath(@__DIR__, "..", "Artifacts.toml"))
+libpath = readdir(artifact"symjit"; join=true)[1]
+
 using SymbolicUtils
 using Symbolics
 using ModelingToolkit

@@ -39,7 +39,7 @@ function create_executable_memory(code::Vector{UInt8})::MachineCode
     size = ceil(Int, length(code) / PAGESIZE) * PAGESIZE
 
     func = ccall(:VirtualAlloc,
-        Ptr{Cvoid},
+        Ptr{Cuchar},
         (Ptr{Cvoid}, Csize_t, Cuint, Cuint),
         C_NULL,
         size,
@@ -48,19 +48,19 @@ function create_executable_memory(code::Vector{UInt8})::MachineCode
     )
 
     mem = unsafe_wrap(Array{UInt8}, func, (size,))
-    mem[1:length(func)] .= code
+    mem[1:length(code)] .= code
 
     mc = MachineCode(mem, func)
 
-    finalizer(mc) do x
-        ccall(:VirtualFree,
-            Cuchar,
-            (Ptr{CVoid}, Csize_t, Cuint),
-            x.func,
-            0,
-            MEM_RELEASE
-        )
-    end
+    # finalizer(mc) do x
+    #     ccall(:VirtualFree,
+    #         Cuchar,
+    #         (Ptr{Cvoid}, Csize_t, Cuint),
+    #         x.func,
+    #         0,
+    #         MEM_RELEASE
+    #     )
+    # end
 
     return mc
 end
