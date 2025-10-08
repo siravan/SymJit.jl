@@ -4,7 +4,6 @@ authors = ["Shahriar Iravanian <siravan@svtsim.com>"]
 version = "0.1.1"
 
 [deps]
-CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
 IfElse = "615f187c-cbe4-4ef1-ba3b-2fcf58d6d173"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 Mmap = "a63ad114-7e13-5084-954f-fe012c677804"
@@ -12,10 +11,8 @@ ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 SymbolicUtils = "d1185830-fcd6-423d-90d6-eec64667417b"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
-Tar = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
 
 [compat]
-CodecZlib = "0.7.8"
 IfElse = ">= 0.1"
 JSON = ">= 0.1"
 Mmap = "1"
@@ -23,4 +20,4 @@ ModelingToolkit = "9, 10"
 Pkg = "1.11.0"
 SymbolicUtils = "3"
 Symbolics = "5, 6"
-Tar = "1.10.0"
+
