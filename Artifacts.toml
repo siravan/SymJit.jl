@@ -1,15 +1,17 @@
 [[symjit]]
 arch = "x86_64"
-git-tree-sha1 = "45d4e38c56be1a6727b4c9d4c06597e800dcbc67"
+git-tree-sha1 = "6717fc2c0c06404b6161757968ff894b89e13635"
 os = "linux"
+
 	[[symjit.download]]
-	sha256 = "8669cd38c8d6c89ec01a75bc2c74a24578cdeecf507c36e290a5cd8bb2ff728b"
+	sha256 = "b4f289196f505aec4e64c9c823e7e8065d12e360e77b4d3a6ef07dba44299918"
 	url = "https://github.com/siravan/SymJitArtifacts/raw/main/symjit_linux-64.tar.gz"
 
 [[symjit]]
 arch = "x86_64"
 git-tree-sha1 = "ac51ab1a583cf619bb284b50538b34ec47c8c761"
 os = "windows"
+
 	[[symjit.download]]
 	sha256 = "d2ee9553e1a7afe0c4b63071c81ca76b5b639d6406193d9993b2d6b7a9e57ab4"
 	url = "https://github.com/siravan/SymJitArtifacts/raw/main/symjit_win-64.tar.gz"
@@ -18,6 +20,7 @@ os = "windows"
 arch = "x86_64"
 git-tree-sha1 = "8929d1f971c3e4b40da5498f8a6b28c6fd6593ac"
 os = "macos"
+
 	[[symjit.download]]
 	sha256 = "f0fdfdb6951474a4ef49792e7ea00e9ed67b0b3b0a879e8b3e1427466cac35d7"
 	url = "https://github.com/siravan/SymJitArtifacts/raw/main/symjit_osx-64.tar.gz"
@@ -26,6 +29,7 @@ os = "macos"
 arch = "aarch64"
 git-tree-sha1 = "2cff4d12e771be1fe45488a6f67c13d989e91cc0"
 os = "macos"
+
 	[[symjit.download]]
 	sha256 = "61c1b73b1cc98e04c546cc5980af4649a6f4399ac85034a8da93fbe54694f7b8"
 	url = "https://github.com/siravan/SymJitArtifacts/raw/main/symjit_osx-arm64.tar.gz"
