@@ -1,5 +1,5 @@
 using JSON
-# using CellMLToolkit
+using ModelingToolkit
 
 function trim_full(s)
     s = string(s)
@@ -108,12 +108,12 @@ function dictify(sys::ODESystem; trim = false)
 
     d = Dict()
 
-    d["iv"] = var_dict(sys.iv, 0.0, stringify)
-    d["params"] = unique([var_dict(v, 0.0, stringify) for v in parameters(sys)])
-    d["states"] = [var_dict(v, 0.0, stringify) for v in unknowns(sys)]
-    d["algs"] = [equation(eq, stringify) for eq in get_alg_eqs(sys)]
-    d["odes"] = [equation(eq, stringify) for eq in get_diff_eqs(sys)]
-    d["obs"] = [equation(eq, stringify) for eq in observed(sys)]
+    d["iv"] = var_dict(ModelingToolkit.get_iv(sys), 0.0, stringify)
+    d["params"] = unique([var_dict(v, 0.0, stringify) for v in ModelingToolkit.parameters(sys)])
+    d["states"] = [var_dict(v, 0.0, stringify) for v in ModelingToolkit.unknowns(sys)]
+    d["algs"] = [equation(eq, stringify) for eq in ModelingToolkit.get_alg_eqs(sys)]
+    d["odes"] = [equation(eq, stringify) for eq in ModelingToolkit.get_diff_eqs(sys)]
+    d["obs"] = [equation(eq, stringify) for eq in ModelingToolkit.observed(sys)]
 
     return d
 end

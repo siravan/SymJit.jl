@@ -2,7 +2,8 @@ using Mmap
 
 const PAGESIZE = 4096
 
-struct MachineCode
+# MachineCode is defined as mutable to allow for passing to finalizer
+mutable struct MachineCode
     mem::Array{UInt8}
     func::Ptr{Cvoid}
 end
@@ -28,7 +29,7 @@ function create_executable_memory(code::Vector{UInt8})::MachineCode
     return MachineCode(mem, func)
 end
 
-else
+elseif Sys.iswindows()
 
 const MEM_COMMIT = 0x00001000
 const MEM_RESERVE = 0x00002000
@@ -52,19 +53,21 @@ function create_executable_memory(code::Vector{UInt8})::MachineCode
 
     mc = MachineCode(mem, func)
 
-    # finalizer(mc) do x
-    #     ccall(:VirtualFree,
-    #         Cuchar,
-    #         (Ptr{Cvoid}, Csize_t, Cuint),
-    #         x.func,
-    #         0,
-    #         MEM_RELEASE
-    #     )
-    # end
+    finalizer(mc) do x
+        ccall(:VirtualFree,
+            Cuchar,
+            (Ptr{Cvoid}, Csize_t, Cuint),
+            x.func,
+            0,
+            MEM_RELEASE
+        )
+    end
 
     return mc
 end
 
+else    # not unix and not windows
+    error("unsupported OS")
 end
 
 function call(machine::MachineCode, x::Float64, y::Float64)
@@ -76,29 +79,5 @@ function call(machine::MachineCode, mem::Vector{Float64}, params::Vector{Float64
     f = machine.func
     p = Base.unsafe_convert(Ptr{Cdouble}, mem)
     q = Base.unsafe_convert(Ptr{Cdouble}, params)
-    @ccall $f(p::Ptr{Cdouble}, C_NULL::Ptr{Cdouble}, 0::Clong, q::Ptr{Cdouble})::Cdouble
-end
-
-##################################################################
-
-@static if Sys.ARCH == :x86_64
-# f = compile_func([x, y], x*y)
-code =  "55534881ec88000000488becf2480f114500f2480f114d08c5fb105" *
-        "d00c5fb105508c5e359dac5fb115d18c5f877f2480f104424184881" *
-        "c4880000005b5dc3900000000000000080000000000000f03ffffff" *
-        "fffffffffff"
-
-elseif Sys.ARCH == :aarch64
-code =  ""
-else
-    @error "unsupported CPU architecture"
-end
-
-function bytes(s)
-    return parse.(UInt8, [s[i:i+1] for i=1:2:length(s)], base=16)
-end
-
-function test()
-    func = create_executable_memory(bytes(code))
-    println(call(func, 2.0, 3.0))
+    @ccall $f(p::Ptr{Cdouble}, C_NULL::Ptr{Cdouble}, 0::Clong, q::Ptr{Cdouble})::Cint
 end

@@ -64,6 +64,26 @@ function compile_ode(t, states, eqs; params=[], ty="native")
     return compile_model(OdeFunc, model; ty)
 end
 
+function compile_ode(f::Function; ty="native")
+    u = Inspector("u")
+    du = Inspector("du")
+    p = Inspector("p")
+    @variables t
+
+    f(du, u, p, t)
+
+    states, _ = linearize(u)
+    _, eqs = linearize(du)
+    @assert length(states) == length(eqs)
+    params, _ = linearize(p)
+
+    println(states)
+    println(eqs)
+    println(params)
+
+    return compile_ode(t, states, eqs; params, ty)
+end
+
 function compile_func(states, model; params=[], ty="native")
     model = JSON.json(dictify(states, model; params))
     return compile_model(Lambdify, model; ty)
@@ -89,6 +109,3 @@ function (f::Func{OdeFunc})(du, u, p, t)
     call(f.code, f.mem, f.params)
     du .= f.mem[f.count_states+f.count_obs+2:f.count_states+f.count_obs+f.count_diffs+1]
 end
-
-# get_p(ml::CellModel) = [last(v) for v in list_params(ml)]
-# get_u0(ml::CellModel) = [last(v) for v in list_states(ml)]
