@@ -9,6 +9,7 @@ include("artifacts.jl")
 include("memory.jl")
 include("jsonify.jl")
 include("inspector.jl")
+include("matrix.jl")
 include("engine.jl")
 
 #************************************************************

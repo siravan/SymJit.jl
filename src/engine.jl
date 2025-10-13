@@ -3,6 +3,7 @@ abstract type Lambdify <: FuncType end
 abstract type OdeFunc <: FuncType end
 
 mutable struct Func{T}
+    handle::Ptr{Cvoid}
     code::MachineCode
     mem::Vector{Float64}
     params::Vector{Float64}
@@ -13,28 +14,27 @@ mutable struct Func{T}
 end
 
 function compile_model(T, model; ty="native")  # ty is 'native', 'bytecode', or 'wasm'
-    ref = ccall((:compile, libpath), Ptr{Cvoid}, (Cstring, Cstring), model, ty)
+    handle = ccall((:compile, libpath), Ptr{Cvoid}, (Cstring, Cstring), model, ty)
     status = unsafe_string(
-        ccall((:check_status, libpath), Ptr{Cchar}, (Ptr{Cvoid},), ref)
+        ccall((:check_status, libpath), Ptr{Cchar}, (Ptr{Cvoid},), handle)
     )
 
     if status != "Success"
         error("compilation error: $status")
     end
 
-    count_states = ccall((:count_states, libpath), Cint, (Ptr{Cvoid},), ref)
-    count_params = ccall((:count_params, libpath), Cint, (Ptr{Cvoid},), ref)
-    count_obs = ccall((:count_obs, libpath), Cint, (Ptr{Cvoid},), ref)
-    count_diffs = ccall((:count_diffs, libpath), Cint, (Ptr{Cvoid},), ref)
+    count_states = ccall((:count_states, libpath), Cint, (Ptr{Cvoid},), handle)
+    count_params = ccall((:count_params, libpath), Cint, (Ptr{Cvoid},), handle)
+    count_obs = ccall((:count_obs, libpath), Cint, (Ptr{Cvoid},), handle)
+    count_diffs = ccall((:count_diffs, libpath), Cint, (Ptr{Cvoid},), handle)
 
     mem = zeros(count_states + count_obs + count_diffs + 1)
     params = zeros(count_params)
 
-    code = create_executable_memory(dumps(ref))
-
-    ccall((:finalize, libpath), Cvoid, (Ptr{Cvoid},), ref)
-
+    code = create_executable_memory(dumps(handle))
+    
     func = Func{T}(
+        handle, 
         code,
         mem,
         params,
@@ -44,11 +44,15 @@ function compile_model(T, model; ty="native")  # ty is 'native', 'bytecode', or 
         count_diffs
     )
 
+    finalizer(func) do f
+        ccall((:finalize, libpath), Cvoid, (Ptr{Cvoid},), f.handle)
+    end
+
     return func
 end
 
-function dumps(ref)
-    ccall((:dump, libpath), Cuchar, (Ptr{Cvoid}, Cstring, Cstring), ref, "_dump.bin", "scalar")
+function dumps(handle)
+    ccall((:dump, libpath), Cuchar, (Ptr{Cvoid}, Cstring, Cstring), handle, "_dump.bin", "scalar")
     bin = read("_dump.bin")
     rm("_dump.bin")
     return bin
@@ -89,17 +93,39 @@ function compile_func(states, model; params=[], ty="native")
     return compile_model(Lambdify, model; ty)
 end
 
-function (func::Func{Lambdify})(u)
-    func.mem[1:func.count_states] .= u
-    call(func.code, func.mem, func.params)
-    return func.mem[func.count_states+2:func.count_states+func.count_obs+1]
-end
+function (func::Func{Lambdify})(u, p=nothing; copy_matrix=true)
+    if p != nothing
+        func.params .= p
+    end
 
-function (func::Func{Lambdify})(u, p)
-    func.mem[1:func.count_states] .= u
-    func.params .= p
-    call(func.code, func.mem, func.params)
-    return func.mem[func.count_states+2:func.count_states+func.count_obs+1]
+    if ndims(u) == 1
+        func.mem[1:func.count_states] .= u    
+        call(func.code, func.mem, func.params)
+        return func.mem[func.count_states+2:func.count_states+func.count_obs+1]
+    elseif ndims(u) == 2
+        if copy_matrix
+            states = zeros(size(u, 1), func.count_states)
+            states .= u        
+            states_mat = create_matrix(states)
+        else
+            states_mat = create_matrix(u)
+        end
+
+        obs = zeros(size(u, 1), func.count_obs)
+        obs_mat = create_matrix(obs)
+
+        ccall((:execute_matrix, libpath), 
+            Cvoid, 
+            (Ptr{Cvoid}, Ptr{Cvoid}, Ptr{Cvoid}), 
+            func.handle, 
+            states_mat.handle, 
+            obs_mat.handle
+        )
+
+        return obs
+    else
+        error("dimension should be 1 or 2")
+    end
 end
 
 function (f::Func{OdeFunc})(du, u, p, t)
