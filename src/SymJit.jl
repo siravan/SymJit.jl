@@ -3,7 +3,7 @@ module SymJit
 using SymbolicUtils
 using Symbolics
 
-export compile_func, compile_ode
+export compile_func, compile_ode, compile_jac
 
 include("artifacts.jl")
 include("memory.jl")
