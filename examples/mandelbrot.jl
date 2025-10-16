@@ -22,14 +22,18 @@ function manderbrot(a, b)
     return [x, y]
 end
 
-f = SymJit.compile_func([a, b], manderbrot(a, b))
+f = compile_func([a, b], manderbrot(a, b))
 
-m = zeros(N, N)
+X = zeros(N*N, 2)
 
 for i = 1:N
     for j = 1:N
-        m[j, i] = hypot(f([i/N*3.0-2.0, j/N*3.0-1.5])...)
+        X[i+(j-1)*N, 1] = j/N*3.0-2.0
+        X[i+(j-1)*N, 2] = i/N*3.0-1.5
     end
 end
+
+z = f(X)
+m = reshape(hypot.(z[:, 1], z[:, 2]), (N, N))
 
 heatmap(m .< 4.0; aspect_ratio = :equal)

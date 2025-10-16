@@ -16,8 +16,26 @@ mutable struct Func{T}
     count_diffs::Int
 end
 
-function compile_model(T, model; ty = "native")  # ty is 'native', 'bytecode', or 'wasm'
-    handle = @ccall libpath.compile(model::Cstring, ty::Cstring)::Ptr{Cvoid}
+const USE_SIMD = 0x01
+const USE_THREADS = 0x02
+const CSE = 0x04
+const FASTMATH = 0x08
+
+function compile_model(
+    T,
+    model;
+    ty = "native",
+    use_simd = true,
+    use_threads = true,
+    cse = true,
+    fastmath = false,
+)
+    opt = (
+        (use_simd ? USE_SIMD : 0) | (use_threads ? USE_THREADS : 0) | (cse ? CSE : 0) |
+        (fastmath ? FASTMATH : 0)
+    )
+
+    handle = @ccall libpath.compile(model::Cstring, ty::Cstring, opt::Cint)::Ptr{Cvoid}
     status = unsafe_string(@ccall libpath.check_status(handle::Ptr{Cvoid})::Ptr{Cchar})
 
     if status != "Success"
@@ -61,14 +79,19 @@ end
 
 ###################### compile_* functions ###############################
 
-function compile_ode(sys::ODESystem; ty = "native")
+function compile_ode(sys::ODESystem; kw...)
     model = JSON.json(dictify_ode(sys))
-    return compile_model(OdeFunc, model; ty)
+    return compile_model(OdeFunc, model; kw...)
 end
 
-function compile_ode(t, states, eqs; params = [], ty = "native")
+function compile_ode(sys::System; kw...)
+    model = JSON.json(dictify_ode(sys))
+    return compile_model(OdeFunc, model; kw...)
+end
+
+function compile_ode(t, states, eqs; params = [], kw...)
     model = JSON.json(dictify_ode(states, eqs, t; params))
-    return compile_model(OdeFunc, model; ty)
+    return compile_model(OdeFunc, model; kw...)
 end
 
 function symbolize_ode_func(f::Function, t)
@@ -86,13 +109,13 @@ function symbolize_ode_func(f::Function, t)
     return states, eqs, params
 end
 
-function compile_ode(f::Function; ty = "native")
+function compile_ode(f::Function; kw...)
     @variables t
     states, eqs, params = symbolize_ode_func(f, t)
-    return compile_ode(t, states, eqs; params, ty)
+    return compile_ode(t, states, eqs; params, kw...)
 end
 
-function compile_jac(t, states, eqs; params = [], ty = "native")
+function compile_jac(t, states, eqs; params = [], kw...)
     n = length(states)
     @assert n == length(eqs)
 
@@ -105,27 +128,27 @@ function compile_jac(t, states, eqs; params = [], ty = "native")
     end
 
     model = JSON.json(dictify(states, J, t; params))
-    return compile_model(JacFunc, model; ty)
+    return compile_model(JacFunc, model; kw...)
 end
 
-function compile_jac(f::Function; ty = "native")
+function compile_jac(f::Function; kw...)
     @variables t
     states, eqs, params = symbolize_ode_func(f, t)
-    return compile_jac(t, states, eqs; params, ty)
+    return compile_jac(t, states, eqs; params, kw...)
 end
 
-function compile_func(f::Function; ty = "native")
+function compile_func(f::Function; kw...)
     F = methods(f)[1]
     v = Inspector("v")
     states = [v[i] for i = 1:(F.nargs-1)]
     obs = f(states...)
     model = JSON.json(dictify(states, [obs]))
-    return compile_model(FastFunc, model; ty)
+    return compile_model(FastFunc, model; kw...)
 end
 
-function compile_func(states, model; params = [], ty = "native")
+function compile_func(states, model; params = [], kw...)
     model = JSON.json(dictify(states, model; params))
-    return compile_model(Lambdify, model; ty)
+    return compile_model(Lambdify, model; kw...)
 end
 
 ######################### Calls #############################
