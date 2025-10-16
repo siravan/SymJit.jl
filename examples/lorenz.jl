@@ -19,7 +19,7 @@ sol1 = solve(prob1)
 prob2 = ODEProblem(lorenz, [1.0, 1.0, 1.0], (0.0, 100.0), (10.0, 28.0, 8 / 3))
 sol2 = solve(prob2)
 
-p1 = plot(sol1; idxs=(1,3), lw=2)
-p2 = plot(sol2; idxs=(1,3), lw=2)
+p1 = plot(sol1; idxs = (1, 3), lw = 2)
+p2 = plot(sol2; idxs = (1, 3), lw = 2)
 
-plot(p1, p2, layout=(1, 2), legend=false, size=(600, 300))
+plot(p1, p2, layout = (1, 2), legend = false, size = (600, 300))

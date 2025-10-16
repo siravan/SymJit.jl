@@ -1,7 +1,7 @@
 
 mutable struct Mat
     handle::Ptr{Cvoid}
-    vecs::Array{Ptr{Cdouble}}       
+    vecs::Array{Ptr{Cdouble}}
 end
 
 function Mat()
@@ -23,7 +23,11 @@ function create_matrix(X)
     for col = 1:ncols
         ptr = pointer(X, 1 + (col-1)*nrows)
         # ccall((:add_row, libpath), Cvoid, (Ptr{Cvoid}, Ptr{Cdouble}, Cint), mat.handle, ptr, nrows)
-        @ccall libpath.add_row(mat.handle::Ptr{Cvoid}, ptr::Ptr{Cdouble}, nrows::Cint)::Cvoid
+        @ccall libpath.add_row(
+            mat.handle::Ptr{Cvoid},
+            ptr::Ptr{Cdouble},
+            nrows::Cint,
+        )::Cvoid
     end
 
     return mat

@@ -14,6 +14,6 @@ function test_ode()
     p = get_p(ml)
     tspan = (0, 5000.0)
     prob = ODEProblem(f, u0, tspan, p)
-    sol = solve(prob, dtmax=0.1)
-    plot(sol; idxs=2)
+    sol = solve(prob, dtmax = 0.1)
+    plot(sol; idxs = 2)
 end

@@ -10,75 +10,75 @@ end
 
 @static if Sys.isunix()
 
-const PROT_READ = 1
-const PROT_WRITE = 2
-const PROT_EXEC = 4
+    const PROT_READ = 1
+    const PROT_WRITE = 2
+    const PROT_EXEC = 4
 
-function create_executable_memory(code::Vector{UInt8})::MachineCode
-    size = ceil(Int, length(code) / PAGESIZE) * PAGESIZE
-    mem = Mmap.mmap(Mmap.Anonymous(), Vector{UInt8}, (size,), 0)
-    mem[1:length(code)] .= code
+    function create_executable_memory(code::Vector{UInt8})::MachineCode
+        size = ceil(Int, length(code) / PAGESIZE) * PAGESIZE
+        mem = Mmap.mmap(Mmap.Anonymous(), Vector{UInt8}, (size,), 0)
+        mem[1:length(code)] .= code
 
-    # ret = ccall(:mprotect, Cint, (Ptr{Cvoid}, Csize_t, Cint), mem, size, PROT_READ | PROT_EXEC)
-    ret = @ccall mprotect(mem::Ptr{Cvoid}, size::Csize_t, (PROT_READ | PROT_EXEC)::Cint)::Cint
+        # ret = ccall(:mprotect, Cint, (Ptr{Cvoid}, Csize_t, Cint), mem, size, PROT_READ | PROT_EXEC)
+        ret = @ccall mprotect(
+            mem::Ptr{Cvoid},
+            size::Csize_t,
+            (PROT_READ | PROT_EXEC)::Cint,
+        )::Cint
 
-    if ret != 0
-        error("cannot change memory to executable")
+        if ret != 0
+            error("cannot change memory to executable")
+        end
+
+        func = Base.unsafe_convert(Ptr{Cvoid}, mem)
+
+        return MachineCode(mem, func)
     end
-
-    func = Base.unsafe_convert(Ptr{Cvoid}, mem)
-
-    return MachineCode(mem, func)
-end
 
 elseif Sys.iswindows()
 
-const MEM_COMMIT = 0x00001000
-const MEM_RESERVE = 0x00002000
-const PAGE_EXECUTE_READWRITE = 0x00000040
-const MEM_RELEASE = 0x00008000
+    const MEM_COMMIT = 0x00001000
+    const MEM_RESERVE = 0x00002000
+    const PAGE_EXECUTE_READWRITE = 0x00000040
+    const MEM_RELEASE = 0x00008000
 
-function create_executable_memory(code::Vector{UInt8})::MachineCode
-    size = ceil(Int, length(code) / PAGESIZE) * PAGESIZE
+    function create_executable_memory(code::Vector{UInt8})::MachineCode
+        size = ceil(Int, length(code) / PAGESIZE) * PAGESIZE
 
-    # func = ccall(:VirtualAlloc,
-    #     Ptr{Cuchar},
-    #     (Ptr{Cvoid}, Csize_t, Cuint, Cuint),
-    #     C_NULL,
-    #     size,
-    #     MEM_COMMIT | MEM_RESERVE,
-    #     PAGE_EXECUTE_READWRITE
-    # )
-
-    func = @ccall VirtualAlloc(
-        C_NULL::Ptr{Cvoid},
-        size::Csize_t,
-        (MEM_COMMIT | MEM_RESERVE)::Cuint,
-        PAGE_EXECUTE_READWRITE::Cuint
-    )::Ptr{Cuchar}
-
-    mem = unsafe_wrap(Array{UInt8}, func, (size,))
-    mem[1:length(code)] .= code
-
-    mc = MachineCode(mem, func)
-
-    finalizer(mc) do x
-        # ccall(:VirtualFree,
-        #     Cuchar,
-        #     (Ptr{Cvoid}, Csize_t, Cuint),
-        #     x.func,
-        #     0,
-        #     MEM_RELEASE
+        # func = ccall(:VirtualAlloc,
+        #     Ptr{Cuchar},
+        #     (Ptr{Cvoid}, Csize_t, Cuint, Cuint),
+        #     C_NULL,
+        #     size,
+        #     MEM_COMMIT | MEM_RESERVE,
+        #     PAGE_EXECUTE_READWRITE
         # )
-        @ccall VirtualFree(
-            x.func::Ptr{Cvoid},
-            0::Csize_t,
-            MEM_RELEASE::Cuint
-        )::Cuchar
-    end
 
-    return mc
-end
+        func = @ccall VirtualAlloc(
+            C_NULL::Ptr{Cvoid},
+            size::Csize_t,
+            (MEM_COMMIT | MEM_RESERVE)::Cuint,
+            PAGE_EXECUTE_READWRITE::Cuint,
+        )::Ptr{Cuchar}
+
+        mem = unsafe_wrap(Array{UInt8}, func, (size,))
+        mem[1:length(code)] .= code
+
+        mc = MachineCode(mem, func)
+
+        finalizer(mc) do x
+            # ccall(:VirtualFree,
+            #     Cuchar,
+            #     (Ptr{Cvoid}, Csize_t, Cuint),
+            #     x.func,
+            #     0,
+            #     MEM_RELEASE
+            # )
+            @ccall VirtualFree(x.func::Ptr{Cvoid}, 0::Csize_t, MEM_RELEASE::Cuint)::Cuchar
+        end
+
+        return mc
+    end
 
 else    # not unix and not windows
     error("unsupported OS")

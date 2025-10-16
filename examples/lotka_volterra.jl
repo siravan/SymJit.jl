@@ -17,7 +17,7 @@ u0 = [1.0, 1.0]
 p = [2.0, 1.2, 3.0, 1.0]
 t_span = (0, 100.0)
 
-ff = ODEFunction(f; jac=f_jac)
+ff = ODEFunction(f; jac = f_jac)
 prob = ODEProblem(ff, u0, t_span, p)
 sol = solve(prob)
 
