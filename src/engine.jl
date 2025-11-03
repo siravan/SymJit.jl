@@ -20,6 +20,8 @@ const USE_SIMD = 0x01
 const USE_THREADS = 0x02
 const CSE = 0x04
 const FASTMATH = 0x08
+const OPT_LEVEL_MASK = 0x0f00
+const OPT_LEVEL_SHIFT = 8
 
 function compile_model(
     T,
@@ -29,10 +31,11 @@ function compile_model(
     use_threads = true,
     cse = true,
     fastmath = false,
+    opt_level = 1,
 )
     opt = (
         (use_simd ? USE_SIMD : 0) | (use_threads ? USE_THREADS : 0) | (cse ? CSE : 0) |
-        (fastmath ? FASTMATH : 0)
+        (fastmath ? FASTMATH : 0) | ((opt_level << OPT_LEVEL_SHIFT) & OPT_LEVEL_MASK)
     )
 
     handle = @ccall libpath.compile(model::Cstring, ty::Cstring, opt::Cint)::Ptr{Cvoid}
@@ -75,6 +78,11 @@ function dumps(handle)
     bin = read("_dump.bin")
     rm("_dump.bin")
     return bin
+end
+
+function version(f::Func{T}) where T
+    msg = unsafe_string(@ccall libpath.info(f.handle::Ptr{Cvoid})::Ptr{Cchar})
+    return msg
 end
 
 ###################### compile_* functions ###############################

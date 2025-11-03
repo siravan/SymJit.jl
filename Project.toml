@@ -1,6 +1,6 @@
 name = "SymJit"
 uuid = "04588a2d-d8a6-4b7e-8fea-48e77ed265f7"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Shahriar Iravanian <siravan@svtsim.com>"]
 
 [deps]
