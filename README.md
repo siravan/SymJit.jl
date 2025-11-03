@@ -2,7 +2,7 @@
 
 *SymJit.jl* is a lightweight just-in-time (JIT) compiler that directly translates Julia Symbolics expressions into machine code without using a separate library such as LLVM. Its main utility is to generate fast numerical functions to feed into various numerical solvers provided by the Julia SciML ecosystem.
 
-*SymJit.jl* is a companion package of [symjiy]([https://](https://github.com/siravan/symjit/)), which provides JIT capability to Python sympy ecosystem. Currently, *SymJit.jl* and *symjit* share the same underlying compiler library written in Rust; however, the plan is for *SymJit.jl* to transform into a Julia only package in the future.x
+*SymJit.jl* is a Julia wrapper for [symjiy]([https://](https://github.com/siravan/symjit/)), which provides JIT capability to Python sympy ecosystem. Currently, *SymJit.jl* and *symjit* share the same underlying compiler library written in Rust. However, its companion package [JitEngine.jl]([https://](https://github.com/siravan/JitEngine.jl/)) is a Julia-only JIT package.
 
 The Rust backend generates AVX-compatible code by default for x86-64/AMD64 processors but can downgrade to SSE2 instructions if the processor does not support AVX or if explicitly requested by passing `ty='amd-sse'` to compile functions (see below). SSE2 instructions were introduced in 2000, meaning that virtually all current 64-bit x86-64 processors support them. Intel introduced the AVX instruction set in 2011; therefore, most processors support it. On ARM64 processors, both the backend generate code for the aarch64 instruction set. ARM32 and IA32 are not supported, but Risc V is in development.
 
@@ -182,6 +182,7 @@ The `compile` functions accept optional keywords that control the compilation pr
 * `use_threads` (boolean, default `true`): use multi-threading to speed up parallel processing.
 * `cse` (boolean, default `true`): performs common-subexpression elimination, i.e., factoring common expressions and sub-expressions.
 * `fastmath` (boolean, default `false`): rewrites the code to combine multiplication and addition/substraction into various fused-multiply-add instructions.
+* `opt_level` (0, 1, or 2, default 1): the optimization level, akin to -O0, -O1, -O2 options to gcc.
 * `ty` (string, default `native`): defines the type of the code to generate. Possible values are:
   - `amd`: generates 64-bit AMD64/x86-64 code. If the processor supports AVX, then this is equivalent to passing `amd-avx`; otherwise, it is equal to `amd-sse`.
   - `amd-avx`: generates 64-bit AMD64/x86-64 AVX code.
