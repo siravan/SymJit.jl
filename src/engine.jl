@@ -1,4 +1,4 @@
-abstract type FuncType end
+ abstract type FuncType end
 abstract type Lambdify <: FuncType end
 abstract type FastFunc <: FuncType end
 abstract type OdeFunc <: FuncType end

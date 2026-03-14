@@ -72,10 +72,10 @@ function expr(n, stringify)
                 "args" => [expr(c, stringify) for c in arguments(n)],
             )
         end
+    elseif ModelingToolkit.unwrap_const(n) isa Number
+        d = Dict("type" => "Const", "val" => float(ModelingToolkit.unwrap_const(n)))
     elseif n isa SymbolicUtils.BasicSymbolic || n isa Symbol
         d = Dict("type" => "Var", "name" => stringify(n))
-    elseif n isa Number
-        d = Dict("type" => "Const", "val" => float(n))
     else
         error("unrecongnized node: $n")
     end
@@ -135,7 +135,7 @@ function dictify_ode(states::Vector{Num}, eqs::Vector{Num}, t; params = [], trim
     return d
 end
 
-function dictify_ode(sys::ODESystem; trim = false)
+function dictify_ode(sys::System; trim = false)
     stringify = trim ? trim_full : trim_partial
 
     d = Dict()
