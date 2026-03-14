@@ -89,7 +89,7 @@ function call(machine::MachineCode, x::Float64, y::Float64)
     return @ccall $f(x::Float64, y::Float64)::Cdouble
 end
 
-function call(machine::MachineCode, mem::Vector{Float64}, params::Vector{Float64})
+function call(machine::MachineCode, mem::Vector, params::Vector)
     f = machine.func
     p = Base.unsafe_convert(Ptr{Cdouble}, mem)
     q = Base.unsafe_convert(Ptr{Cdouble}, params)

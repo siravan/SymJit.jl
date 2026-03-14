@@ -8,8 +8,8 @@ abstract type JacFunc <: FuncType end
 mutable struct Func{T}
     handle::Ptr{Cvoid}
     code::MachineCode
-    mem::Vector{Float64}
-    params::Vector{Float64}
+    mem::Vector
+    params::Vector
     count_states::Int
     count_params::Int
     count_obs::Int
@@ -20,6 +20,7 @@ const USE_SIMD = 0x01
 const USE_THREADS = 0x02
 const CSE = 0x04
 const FASTMATH = 0x08
+const COMPLEX = 0x20
 const OPT_LEVEL_MASK = 0x0f00
 const OPT_LEVEL_SHIFT = 8
 
@@ -31,40 +32,64 @@ function compile_model(
     use_threads = true,
     cse = true,
     fastmath = false,
-    opt_level = 1,
+    opt_level = 2,
+    dtype = :real,
 )
+    @assert dtype in [:real, :complex]
+    is_complex = dtype == :complex
+
     opt = (
         (use_simd ? USE_SIMD : 0) | (use_threads ? USE_THREADS : 0) | (cse ? CSE : 0) |
-        (fastmath ? FASTMATH : 0) | ((opt_level << OPT_LEVEL_SHIFT) & OPT_LEVEL_MASK)
+        (fastmath ? FASTMATH : 0) | (is_complex ? COMPLEX : 0) |
+        ((opt_level << OPT_LEVEL_SHIFT) & OPT_LEVEL_MASK)
     )
 
-    handle = @ccall libpath.compile(model::Cstring, ty::Cstring, opt::Cint)::Ptr{Cvoid}
+    df = @ccall libpath.create_defuns()::Ptr{Cvoid}
+    handle = @ccall libpath.compile(model::Cstring, ty::Cstring, opt::Cint, df::Ptr{Cvoid})::Ptr{Cvoid}
     status = unsafe_string(@ccall libpath.check_status(handle::Ptr{Cvoid})::Ptr{Cchar})
 
     if status != "Success"
         error("compilation error: $status")
     end
 
-    count_states = @ccall libpath.count_states(handle::Ptr{Cvoid})::Cint
-    count_params = @ccall libpath.count_params(handle::Ptr{Cvoid})::Cint
-    count_obs = @ccall libpath.count_obs(handle::Ptr{Cvoid})::Cint
-    count_diffs = @ccall libpath.count_diffs(handle::Ptr{Cvoid})::Cint
+    k = is_complex ? 2 : 1
 
-    mem = zeros(count_states + count_obs + count_diffs + 1)
-    params = zeros(count_params)
+    count_states = (@ccall libpath.count_states(handle::Ptr{Cvoid})::Cint) ÷ k
+    count_params = (@ccall libpath.count_params(handle::Ptr{Cvoid})::Cint) ÷ k
+    count_obs = (@ccall libpath.count_obs(handle::Ptr{Cvoid})::Cint) ÷ k
+    count_diffs = (@ccall libpath.count_diffs(handle::Ptr{Cvoid})::Cint) ÷ k
 
     code = create_executable_memory(dumps(handle))
 
-    func = Func{T}(
-        handle,
-        code,
-        mem,
-        params,
-        count_states,
-        count_params,
-        count_obs,
-        count_diffs,
-    )
+    if is_complex
+        mem = zeros(ComplexF64, count_states + count_obs + count_diffs + 1)
+        params = zeros(ComplexF64, count_params)
+
+        func = Func{T}(
+            handle,
+            code,
+            mem,
+            params,
+            count_states,
+            count_params,
+            count_obs,
+            count_diffs,
+        )
+    else
+        mem = zeros(count_states + count_obs + count_diffs + 1)
+        params = zeros(count_params)
+
+        func = Func{T}(
+            handle,
+            code,
+            mem,
+            params,
+            count_states,
+            count_params,
+            count_obs,
+            count_diffs,
+        )
+    end
 
     finalizer(func) do f
         @ccall libpath.finalize(f.handle::Ptr{Cvoid})::Cvoid
@@ -164,14 +189,14 @@ end
 function (func::Func{Lambdify})(u::Vector{T}) where {T<:Number}
     func.mem[1:func.count_states] .= u
     call(func.code, func.mem, func.params)
-    return func.mem[(func.count_states+2):(func.count_states+func.count_obs+1)]
+    return func.mem[(func.count_states+1):(func.count_states+func.count_obs)]
 end
 
 function (func::Func{Lambdify})(u::Vector{T}, p) where {T<:Number}
     func.params .= p
     func.mem[1:func.count_states] .= u
     call(func.code, func.mem, func.params)
-    return func.mem[(func.count_states+2):(func.count_states+func.count_obs+1)]
+    return func.mem[(func.count_states+1):(func.count_states+func.count_obs)]
 end
 
 function (func::Func{Lambdify})(
@@ -207,22 +232,23 @@ function (func::Func{FastFunc})(args...)
     @assert func.count_obs == 1
     func.mem[1:func.count_states] .= args
     call(func.code, func.mem, func.params)
-    return func.mem[func.count_states+2]
+    return func.mem[func.count_states+1]
 end
 
 function (f::Func{OdeFunc})(du, u, p, t)
-    f.mem[1:f.count_states] .= u
+    f.mem[1] = t
+    f.mem[2:f.count_states+1] .= u
     f.params .= p
-    f.mem[f.count_states+1] = t
     call(f.code, f.mem, f.params)
     du .= f.mem[(f.count_states+f.count_obs+2):(f.count_states+f.count_obs+f.count_diffs+1)]
 end
 
 function (f::Func{JacFunc})(J, u, p, t)
-    f.mem[1:f.count_states] .= u
-    f.params .= p
-    f.mem[f.count_states+1] = t
-    call(f.code, f.mem, f.params)
     n = f.count_states
+    f.mem[f.count_states] = t
+    f.mem[2:n+1] .= u
+    f.params .= p
+
+    call(f.code, f.mem, f.params)
     J .= reshape(f.mem[(n+2):(n+1+n*n)], (n, n))
 end

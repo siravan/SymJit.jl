@@ -1,32 +1,32 @@
 [[symjit]]
 arch = "x86_64"
-git-tree-sha1 = "a2ee9780fdc1a80893df1a31ea722681badf3bcf"
+git-tree-sha1 = "67c1855b0a4035859688237a8da83171aeb4b331"
 os = "linux"
 	[[symjit.download]]
-	sha256 = "675c435460c4bf5ceaefb78ad614c38d04d2995ddb3f39579277c376343e0da5"
-	url = "https://github.com/siravan/SymJitArtifacts/raw/main/symjit_linux-64.tar.gz"
+	sha256 = "811ec9b5083b2f2ded67efca6cdb05ae17e972d9a1a3dd09e3ee4c0f25ec9136"
+	url = "https://github.com/siravan/SymJitArtifacts/raw/main/2.13.5/symjit_linux-64.tar.gz"
 
 [[symjit]]
 arch = "x86_64"
-git-tree-sha1 = "58f9de1645f11a544f7584cf519df6b6171ca7f6"
+git-tree-sha1 = "257da18827dd954b10e4b9f0f0b75954191d33ac"
 os = "windows"
 	[[symjit.download]]
-	sha256 = "6290200e2b97318d49e22a560bea82ad4ff31632d18ae5992fba7c151e4c9dce"
-	url = "https://github.com/siravan/SymJitArtifacts/raw/main/symjit_win-64.tar.gz"
+	sha256 = "3148253ff287b5198d1f3b47a257f413a2d28ba02082dee9103febb7aff7e41e"
+	url = "https://github.com/siravan/SymJitArtifacts/raw/main/2.13.5/symjit_win-64.tar.gz"
 
 [[symjit]]
 arch = "x86_64"
-git-tree-sha1 = "620d78d9508535e6a6117842f962b15c1042c734"
+git-tree-sha1 = "e6f230a6ffc46dc149b82565273bcd48407de2a3"
 os = "macos"
 	[[symjit.download]]
-	sha256 = "06eba9f2df94a9527590d3e27ae9ea769acb6aee856f50656134f89dc20ab942"
-	url = "https://github.com/siravan/SymJitArtifacts/raw/main/symjit_osx-64.tar.gz"
+	sha256 = "fa43aef5ac0733a4304d8989c7a563aaf33ab426ba7d3fbae6cb994986e74ba2"
+	url = "https://github.com/siravan/SymJitArtifacts/raw/main/2.13.5/symjit_osx-64.tar.gz"
 
 [[symjit]]
 arch = "aarch64"
-git-tree-sha1 = "d85079b67513d8c2b1a25004625fd657d069e2e6"
+git-tree-sha1 = "a3c6188e69f065af15c7b517f6560f6434120e61"
 os = "macos"
 	[[symjit.download]]
-	sha256 = "d5e28e507d947a9d44e630446604c6e92c46e8c76038b0089a264564a68e613a"
-	url = "https://github.com/siravan/SymJitArtifacts/raw/main/symjit_osx-arm64.tar.gz"
+	sha256 = "51e909c998a9c532712f04ce426e789d59ca2b931ad0b8d942790b473ea0259a"
+	url = "https://github.com/siravan/SymJitArtifacts/raw/main/2.13.5/symjit_osx-arm64.tar.gz"
 
