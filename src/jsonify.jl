@@ -94,9 +94,9 @@ end
 function dictify(
     states::Vector{Num},
     eqs::Vector{Num},
-    t = nothing;
-    params = [],
-    trim = false,
+    t=nothing;
+    params=[],
+    trim=false,
 )
     stringify = trim ? trim_full : trim_partial
     obs = []
@@ -107,17 +107,17 @@ function dictify(
 
     d = Dict()
 
-    d["iv"] = var_dict(t==nothing ? "\$_" : t, 0.0, stringify)
+    d["iv"] = var_dict(t == nothing ? "\$_" : t, 0.0, stringify)
     d["params"] = [var_dict(v, 0.0, stringify) for v in params]
     d["states"] = [var_dict(v, 0.0, stringify) for v in states]
     d["algs"] = []
     d["odes"] = []
-    d["obs"] = [equation(lhs, rhs, stringify) for (lhs, rhs) in zip(obs, eqs)]
+    d["obs"] = balance([equation(lhs, rhs, stringify) for (lhs, rhs) in zip(obs, eqs)])
 
     return d
 end
 
-function dictify_ode(states::Vector{Num}, eqs::Vector{Num}, t; params = [], trim = false)
+function dictify_ode(states::Vector{Num}, eqs::Vector{Num}, t; params=[], trim=false)
     stringify = trim ? trim_full : trim_partial
     obs = []
     @assert length(states) == length(eqs)
@@ -129,13 +129,13 @@ function dictify_ode(states::Vector{Num}, eqs::Vector{Num}, t; params = [], trim
     d["params"] = [var_dict(v, 0.0, stringify) for v in params]
     d["states"] = [var_dict(v, 0.0, stringify) for v in states]
     d["algs"] = []
-    d["odes"] = [equation(D(lhs), rhs, stringify) for (lhs, rhs) in zip(states, eqs)]
+    d["odes"] = balance([equation(D(lhs), rhs, stringify) for (lhs, rhs) in zip(states, eqs)])
     d["obs"] = []
 
     return d
 end
 
-function dictify_ode(sys::System; trim = false)
+function dictify_ode(sys::System; trim=false)
     stringify = trim ? trim_full : trim_partial
 
     d = Dict()
@@ -144,9 +144,52 @@ function dictify_ode(sys::System; trim = false)
     d["params"] =
         unique([var_dict(v, 0.0, stringify) for v in ModelingToolkit.parameters(sys)])
     d["states"] = [var_dict(v, 0.0, stringify) for v in ModelingToolkit.unknowns(sys)]
-    d["algs"] = [equation(eq, stringify) for eq in ModelingToolkit.get_alg_eqs(sys)]
-    d["odes"] = [equation(eq, stringify) for eq in ModelingToolkit.get_diff_eqs(sys)]
-    d["obs"] = [equation(eq, stringify) for eq in ModelingToolkit.observed(sys)]
+    d["algs"] = balance([equation(eq, stringify) for eq in ModelingToolkit.get_alg_eqs(sys)])
+    d["odes"] = balance([equation(eq, stringify) for eq in ModelingToolkit.get_diff_eqs(sys)])
+    d["obs"] = balance([equation(eq, stringify) for eq in ModelingToolkit.observed(sys)])
 
     return d
+end
+
+#######################################################
+
+function balance(eqs, node)
+    if node["type"] == "Tree"
+        args = []
+        h = 0
+        for arg in node["args"]
+            (child, height) = balance(eqs, arg)
+            push!(args, child)
+            h = max(h, height) + 1
+        end
+
+        new_node = Dict(
+            "type" => "Tree",
+            "op" => node["op"],
+            "args" => args,
+        )
+
+        if h < 50
+            return (new_node, h)
+        else
+            k = length(eqs)
+            temp = Dict("type" => "Var", "name" => "__Temp$k")
+            push!(eqs, Dict("lhs" => temp, "rhs" => new_node))
+            return (temp, 1)
+        end
+    else
+        return (node, 1)
+    end
+end
+
+function balance(equations)
+    eqs = []
+    for eq in equations
+        (rhs, _) = balance(eqs, eq["rhs"])
+        push!(
+            eqs,
+            Dict("lhs" => eq["lhs"], "rhs" => rhs)
+        )
+    end
+    return eqs
 end
