@@ -46,6 +46,7 @@ const cellml_ops::Dict{String,String} = Dict(
     "log" => "ln",
     "log10" => "log",
     "ceil" => "ceiling",
+    "imag" => "imaginary",
 )
 
 function opify(op)
@@ -115,6 +116,18 @@ function dictify(
     d["obs"] = balance([equation(lhs, rhs, stringify) for (lhs, rhs) in zip(obs, eqs)])
 
     return d
+end
+
+function dictify(
+    states::Vector{Complex{Num}},
+    eqs::Vector{Complex{Num}},
+    t=nothing;
+    params=[],
+    trim=false,
+)
+    states = [Num(SymbolicUtils.unwrap(var)) for var in states]
+    eqs = [Num(SymbolicUtils.unwrap(eq)) for eq in eqs]
+    return dictify(states, eqs, t; params, trim)
 end
 
 function dictify_ode(states::Vector{Num}, eqs::Vector{Num}, t; params=[], trim=false)
