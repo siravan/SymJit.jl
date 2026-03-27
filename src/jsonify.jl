@@ -93,12 +93,15 @@ function equation(lhs, rhs, stringify)
 end
 
 function dictify(
-    states::Vector{Num},
-    eqs::Vector{Num},
+    states,
+    eqs,
     t=nothing;
     params=[],
     trim=false,
 )
+    states = unwrap_states(states)
+    eqs = unwrap_eqs(eqs)
+
     stringify = trim ? trim_full : trim_partial
     obs = []
     for i = 0:(length(eqs)-1)
@@ -118,16 +121,32 @@ function dictify(
     return d
 end
 
-function dictify(
-    states::Vector{Complex{Num}},
-    eqs::Vector{Complex{Num}},
-    t=nothing;
-    params=[],
-    trim=false,
-)
-    states = [Num(SymbolicUtils.unwrap(var)) for var in states]
-    eqs = [Num(SymbolicUtils.unwrap(eq)) for eq in eqs]
-    return dictify(states, eqs, t; params, trim)
+function unwrap_states(states)
+    v = []
+
+    for var in states
+        if var isa Complex && isequal(var.im, 0)
+            push!(v, real(var))
+        else
+            push!(v, var)
+        end
+    end
+
+    return v
+end
+
+function unwrap_eqs(eqs)
+    v = []
+
+    for eq in eqs
+        if eq isa Num
+            push!(v, eq)
+        else
+            push!(v, Num(SymbolicUtils.unwrap(eq)))
+        end
+    end
+
+    return v
 end
 
 function dictify_ode(states::Vector{Num}, eqs::Vector{Num}, t; params=[], trim=false)
