@@ -57,7 +57,9 @@ function opify(op)
     end
 end
 
-var_dict(var, val, stringify) = Dict("name" => stringify(var), "val" => val)
+name_indexed(v) = replace(string(v), "[" => "_", "]" => "", "," => "_", " " => "")
+
+var_dict(var, val, stringify) = Dict("name" => name_indexed(stringify(var)), "val" => val)
 
 expr(n::Num, stringify) = expr(n.val, stringify)
 
@@ -66,6 +68,8 @@ function expr(n, stringify)
         op = operation(n)
         if op isa SymbolicUtils.BasicSymbolic
             d = expr(op, stringify)
+        elseif op == getindex
+            d = Dict("type" => "Var", "name" => name_indexed(n))
         else
             d = Dict(
                 "type" => "Tree",
